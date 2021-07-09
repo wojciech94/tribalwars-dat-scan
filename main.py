@@ -91,68 +91,94 @@ def try_get_text(text):
 
 
 def find_enemy_conquerors():
+    temp_count = int(input("Enter conquerors count:"))
+    conquerors_count = max(min(temp_count, 400), 0)
+    temp_count = 0
+    page_number = 0
     conquerors_url = 'https://pl.twstats.com/pl157/index.php?page=ennoblements&live=live'
     page = get(conquerors_url)
 
     response = BeautifulSoup(page.content, 'html.parser')
     conquerors_response = response.find('table', class_='widget')
 
-    for tr in conquerors_response.find_all('tr'):
-        td = tr.find_all('td')
-        villages = []
-        for idx in range(len(td)):
-            if idx == 0:
-                village_offset = td[idx].get_text().rfind('(') + 1
-                name = td[idx].get_text()[0:village_offset - 1]
-                coord = td[idx].get_text()[village_offset:village_offset + 7]
-                v = Village(name)
-                villages.append(v)
-                v.cords = coord
-                print("Village Name: " + v.name)
-                print("Village Cords: " + coord)
-            elif idx == 1:
-                points = td[idx].get_text().replace(',', '')
-                v.points = points
-                print("Points: " + v.points)
-            elif idx == 2:
-                length = len(td[idx].find_all('a'))
-                if length == 0:
-                    name = td[idx].get_text()
-                    v.ai = True
-                    v.previous_owner = name
-                    print("AI: " + name)
-                else:
+    villages = []
+    break_condition = False
+    while not break_condition:
+        if page_number == 0:
+            temporary_tr = conquerors_response.find_all('tr')
+        else:
+            next_conquerors_url = 'https://pl.twstats.com/pl157/index.php?page=ennoblements&pn='+str(page_number)+'&k=-1&maxpoints=0&minpoints=0&filtertribe=0'
+            next_page = get(next_conquerors_url)
+            next_response = BeautifulSoup(next_page.content, 'html.parser')
+            next_conc_response = next_response.find('table', class_='widget')
+            while next_conc_response.find_parent('form') is not None:
+                next_conc_response = next_conc_response.find_next('table', class_='widget')
+            temporary_tr = next_conc_response.find_all('tr')
+        i = 0
+        for tr in temporary_tr:
+            td = tr.find_all('td')
+            i += 1
+            for idx in range(len(td)):
+                if idx == 0:
+                    village_offset = td[idx].get_text().rfind('(') + 1
+                    name = td[idx].get_text()[0:village_offset - 1]
+                    coord = td[idx].get_text()[village_offset:village_offset + 7]
+                    v = Village(name)
+                    villages.append(v)
+                    v.cords = coord
+                    print("Village Name: " + v.name)
+                    print("Village Cords: " + coord)
+                elif idx == 1:
+                    points = td[idx].get_text().replace(',', '')
+                    v.points = points
+                    print("Points: " + v.points)
+                elif idx == 2:
+                    length = len(td[idx].find_all('a'))
+                    if length == 0:
+                        name = td[idx].get_text()
+                        v.ai = True
+                        v.previous_owner = name
+                        print("AI: " + name)
+                    else:
+                        if length == 1:
+                            name = td[idx].find('a').get_text()
+                            v.previous_owner = name
+                            print("Player: " + name)
+                        else:
+                            name = td[idx].find('a').get_text()
+                            tribe = td[idx].find('a', class_='tribelink').get_text()
+                            v.previous_owner = name
+                            v.previous_owner_tribe = tribe
+                            print("Player: " + name)
+                            print("Tribe: " + tribe)
+                elif idx == 3:
+                    length = len(td[idx].find_all('a'))
                     if length == 1:
                         name = td[idx].find('a').get_text()
-                        v.previous_owner = name
+                        v.owner = name
                         print("Player: " + name)
                     else:
                         name = td[idx].find('a').get_text()
                         tribe = td[idx].find('a', class_='tribelink').get_text()
-                        v.previous_owner = name
-                        v.previous_owner_tribe = tribe
+                        v.owner = name
+                        v.owner_tribe = tribe
                         print("Player: " + name)
-                        print("Tribe: " + tribe)
-            elif idx == 3:
-                length = len(td[idx].find_all('a'))
-                if length == 1:
-                    name = td[idx].find('a').get_text()
-                    v.owner = name
-                    print("Player: " + name)
+                        print("Tribe " + tribe)
                 else:
-                    name = td[idx].find('a').get_text()
-                    tribe = td[idx].find('a', class_='tribelink').get_text()
-                    v.owner = name
-                    v.owner_tribe = tribe
-                    print("Player: " + name)
-                    print("Tribe " + tribe)
-            else:
-                date = td[4].get_text()
-                v.conqueror_time = date
-                print("Conqueror date: " + date + '\n')
+                    date = td[4].get_text()
+                    v.conqueror_time = date
+                    print("Conqueror date: " + date + '\n')
+            if temp_count == conquerors_count:
+                break_condition = True
+                break
+            if i != len(temporary_tr):
+                temp_count += 1
+                print('Conquerors count:' + str(temp_count))
+        page_number += 1
+        print('Page number:'+str(page_number))
 
 
 if __name__ == '__main__':
-    show_inactive_members()
-    show_rank_stats()
+    #show_inactive_members()
+    #show_rank_stats()
     find_enemy_conquerors()
