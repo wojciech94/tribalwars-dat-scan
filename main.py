@@ -1,5 +1,3 @@
-from typing import List, Any
-
 from requests import get
 from bs4 import BeautifulSoup
 
@@ -26,15 +24,24 @@ def show_active_tribe(world_number):
             print(name + ':' + tribe_id)
 
 
+
 def show_inactive_members():
+    Players.clear()
     wn = str(input("Enter word number to analize\n"))
     show_active_tribe(wn)
     idp = str(input("Enter tribe id\n"))
+    show_inactive = str(input("Show only inactive players? (t/n)\n"))
+    only_inactive = show_inactive.lower() == 't'
     tribe_url = 'https://pl.twstats.com/pl' + wn + '/index.php?page=tribe&mode=members&id=' + idp
     page = get(tribe_url)
 
     response = BeautifulSoup(page.content, 'html.parser')
     value = response.find('table', class_='widget')
+    try:
+        value.find_all('tr')
+    except AttributeError:
+        return 0
+        pass
     names = []
     idx = -1
     span_offset = 0
@@ -55,11 +62,16 @@ def show_inactive_members():
             except AttributeError:
                 pass
     for i in range(idx):
-        Players[i].show_player_activity(True)
+        Players[i].show_player_activity(only_inactive)
+    print('')
 
 
 def show_rank_stats():
-    rank_url = 'https://pl.twstats.com/pl157/index.php?page=rankings&mode=playersod&tribe=572'
+    Players.clear()
+    wn = str(input("Enter word number to analize\n"))
+    show_active_tribe(wn)
+    idp = str(input("Enter tribe id\n"))
+    rank_url = 'https://pl.twstats.com/pl'+wn+'/index.php?page=rankings&mode=playersod&tribe='+idp
     rank_page = get(rank_url)
 
     rank_bs = BeautifulSoup(rank_page.content, 'html.parser')
@@ -80,6 +92,7 @@ def show_rank_stats():
                     data.append(tt.get_text())
                     if ids == len(td) - 1:
                         pl.set_ranking_data(data)
+    print('')
 
 
 def try_get_text(text):
@@ -179,6 +192,12 @@ def find_enemy_conquerors():
 
 
 if __name__ == '__main__':
-    #show_inactive_members()
-    #show_rank_stats()
-    find_enemy_conquerors()
+    n = 0
+    while n != -1:
+        n = int(input("Select an action:\n1. Show inactive players\n2. Show ranking\n3. Show conquerors\n"))
+        if n == 1:
+            show_inactive_members()
+        elif n == 2:
+            show_rank_stats()
+        else:
+            find_enemy_conquerors()
