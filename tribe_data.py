@@ -13,6 +13,7 @@ def show_active_tribe(world_number):
 
     wn_response = BeautifulSoup(wn_page.content, 'html.parser')
     tribes = wn_response.find_all('table', class_='widget')[1]
+    text = ''
     for tr in tribes.find_all('tr'):
         for idx in tr.find_all('a'):
             link = idx['href']
@@ -21,16 +22,17 @@ def show_active_tribe(world_number):
             offset = link.rfind('=')
             tribe_id = link[offset + 1:len(link)]
             name = idx.get_text()
+            text = text + name + ':' + tribe_id + '\n'
             print(name + ':' + tribe_id)
+    return text
 
 
-def show_inactive_members():
+def show_inactive_members(world_number, tribe_id, show_inact):
     Players.clear()
-    wn = str(input("Enter word number to analize\n"))
+    wn = world_number
     show_active_tribe(wn)
-    idp = str(input("Enter tribe id\n"))
-    show_inactive = str(input("Show only inactive players? (t/n)\n"))
-    only_inactive = show_inactive.lower() == 't'
+    idp = tribe_id
+    only_inactive = show_inact
     tribe_url = 'https://pl.twstats.com/pl' + wn + '/index.php?page=tribe&mode=members&id=' + idp
     page = get(tribe_url)
 
@@ -65,16 +67,15 @@ def show_inactive_members():
     print('')
 
 
-def show_rank_stats():
+def show_rank_stats(wn, idp):
     Players.clear()
-    wn = str(input("Enter word number to analize\n"))
-    show_active_tribe(wn)
-    idp = str(input("Enter tribe id\n"))
-    rank_url = 'https://pl.twstats.com/pl'+wn+'/index.php?page=rankings&mode=playersod&tribe='+idp
+    rank_url = 'https://pl.twstats.com/pl' + wn + '/index.php?page=rankings&mode=playersod&tribe=' + idp
     rank_page = get(rank_url)
 
     rank_bs = BeautifulSoup(rank_page.content, 'html.parser')
     rank_response = rank_bs.find('table', class_='widget')
+    PlayersData = ''
+    k = 0
 
     for tr in rank_response.find_all('tr'):
         td = tr.find_all('td')
@@ -91,7 +92,9 @@ def show_rank_stats():
                     data.append(tt.get_text())
                     if ids == len(td) - 1:
                         pl.set_ranking_data(data)
-    print('')
+                        PlayersData += pl.get_player_data()
+                        k += 1
+    return PlayersData
 
 
 def try_get_text(text):
@@ -119,7 +122,8 @@ def find_enemy_conquerors():
         if page_number == 0:
             temporary_tr = conquerors_response.find_all('tr')
         else:
-            next_conquerors_url = 'https://pl.twstats.com/pl157/index.php?page=ennoblements&pn='+str(page_number)+'&k=-1&maxpoints=0&minpoints=0&filtertribe=0'
+            next_conquerors_url = 'https://pl.twstats.com/pl157/index.php?page=ennoblements&pn=' + str(
+                page_number) + '&k=-1&maxpoints=0&minpoints=0&filtertribe=0'
             next_page = get(next_conquerors_url)
             next_response = BeautifulSoup(next_page.content, 'html.parser')
             next_conc_response = next_response.find('table', class_='widget')
@@ -187,4 +191,3 @@ def find_enemy_conquerors():
                 temp_count += 1
                 print('Conquerors count:' + str(temp_count))
         page_number += 1
-        print('Page number:'+str(page_number))
