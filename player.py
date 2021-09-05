@@ -34,12 +34,14 @@ class Player:
                 inactive += 1
         if show_only_inactive:
             if inactive > 0:
-                print("Player " + self.name + " was inactive for " + str(inactive) + " days in a week")
+                return "\nPlayer " + self.name + " was inactive for " + str(inactive) + " days in a week"
+            else:
+                return ""
         else:
             if inactive > 0:
-                print("Player " + self.name + " was inactive for " + str(inactive) + " days in a week")
+                return "\nPlayer " + self.name + " was inactive for " + str(inactive) + " days in a week"
             else:
-                print("Player " + self.name + " is active")
+                return "\nPlayer " + self.name + " is active"
 
     def get_growth(self):
         return self.growth

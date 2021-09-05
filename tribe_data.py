@@ -8,11 +8,17 @@ Players = []
 
 
 def show_active_tribe(world_number):
-    wn_url = 'https://pl.twstats.com/pl' + world_number + '/index.php'
+    wn_url = 'https://pl.twstats.com/pl' + world_number + '/index.php?page=rankings&mode=tribes'
     wn_page = get(wn_url)
-
+    if wn_page.status_code >= 400:
+        return 'HTML Error cannot find specyfic world number\n' \
+               'Ensure you enter correct world number'
     wn_response = BeautifulSoup(wn_page.content, 'html.parser')
-    tribes = wn_response.find_all('table', class_='widget')[1]
+    res = wn_response.find_all('table', class_='widget')
+    if len(res) == 0:
+        return 'HTML Error cannot find specyfic world number\n' \
+               'Ensure you enter correct world number'
+    tribes = wn_response.find_all('table', class_='widget')[0]
     text = ''
     for tr in tribes.find_all('tr'):
         for idx in tr.find_all('a'):
@@ -41,8 +47,7 @@ def show_inactive_members(world_number, tribe_id, show_inact):
     try:
         value.find_all('tr')
     except AttributeError:
-        return 0
-        pass
+        return "HTML error - cannot find any data"
     names = []
     idx = -1
     span_offset = 0
@@ -62,9 +67,11 @@ def show_inactive_members(world_number, tribe_id, show_inact):
                     span_offset += 1
             except AttributeError:
                 pass
+    PlayersData = ''
     for i in range(idx):
-        Players[i].show_player_activity(only_inactive)
-    print('')
+        PlayersData += Players[i].show_player_activity(only_inactive)
+    return PlayersData.strip()
+
 
 
 def show_rank_stats(wn, idp):
