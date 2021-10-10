@@ -9,14 +9,18 @@ class Player:
         self.data_size = 8
         self.defeated_ranking = []
 
+    def get_player_data(self):
+        return "Name:{0}, Tribe:{1}, Ranking:{2}\n".format(self.name, self.tribe, self.get_ranking_data())
+
     def set_player_tribe(self, tribe):
         self.tribe = tribe
 
     def set_ranking_data(self, data):
         for d in data:
             self.defeated_ranking.append(su.parse_data(d))
-        print(self.name)
-        print(self.defeated_ranking)
+
+    def get_ranking_data(self):
+        return self.defeated_ranking
 
     def print_all(self):
         print(self.name)
@@ -30,12 +34,17 @@ class Player:
                 inactive += 1
         if show_only_inactive:
             if inactive > 0:
-                print("Player " + self.name + " was inactive for " + str(inactive) + " days in a week")
+                return "\nPlayer " + self.name + " was inactive for " + str(inactive) + " days in a week"
+            else:
+                return ""
         else:
             if inactive > 0:
-                print("Player " + self.name + " was inactive for " + str(inactive) + " days in a week")
+                return "\nPlayer " + self.name + " was inactive for " + str(inactive) + " days in a week"
             else:
-                print("Player " + self.name + " is active")
+                return "\nPlayer " + self.name + " is active"
+
+    def get_growth(self):
+        return self.growth
 
     def get_growth_by_index(self, ids):
         if ids < 0 or ids >= self.data_size:

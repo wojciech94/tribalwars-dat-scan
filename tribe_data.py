@@ -8,11 +8,18 @@ Players = []
 
 
 def show_active_tribe(world_number):
-    wn_url = 'https://pl.twstats.com/pl' + world_number + '/index.php'
+    wn_url = 'https://pl.twstats.com/pl' + world_number + '/index.php?page=rankings&mode=tribes'
     wn_page = get(wn_url)
-
+    if wn_page.status_code >= 400:
+        return 'HTML Error cannot find specyfic world number\n' \
+               'Ensure you enter correct world number'
     wn_response = BeautifulSoup(wn_page.content, 'html.parser')
-    tribes = wn_response.find_all('table', class_='widget')[1]
+    res = wn_response.find_all('table', class_='widget')
+    if len(res) == 0:
+        return 'HTML Error cannot find specyfic world number\n' \
+               'Ensure you enter correct world number'
+    tribes = wn_response.find_all('table', class_='widget')[0]
+    text = ''
     for tr in tribes.find_all('tr'):
         for idx in tr.find_all('a'):
             link = idx['href']
@@ -21,16 +28,17 @@ def show_active_tribe(world_number):
             offset = link.rfind('=')
             tribe_id = link[offset + 1:len(link)]
             name = idx.get_text()
+            text = text + name + ':' + tribe_id + '\n'
             print(name + ':' + tribe_id)
+    return text
 
 
-def show_inactive_members():
+def show_inactive_members(world_number, tribe_id, show_inact):
     Players.clear()
-    wn = str(input("Enter word number to analize\n"))
+    wn = world_number
     show_active_tribe(wn)
-    idp = str(input("Enter tribe id\n"))
-    show_inactive = str(input("Show only inactive players? (t/n)\n"))
-    only_inactive = show_inactive.lower() == 't'
+    idp = tribe_id
+    only_inactive = show_inact
     tribe_url = 'https://pl.twstats.com/pl' + wn + '/index.php?page=tribe&mode=members&id=' + idp
     page = get(tribe_url)
 
@@ -39,8 +47,7 @@ def show_inactive_members():
     try:
         value.find_all('tr')
     except AttributeError:
-        return 0
-        pass
+        return "HTML error - cannot find any data"
     names = []
     idx = -1
     span_offset = 0
@@ -60,21 +67,21 @@ def show_inactive_members():
                     span_offset += 1
             except AttributeError:
                 pass
+    PlayersData = ''
     for i in range(idx):
-        Players[i].show_player_activity(only_inactive)
-    print('')
+        PlayersData += Players[i].show_player_activity(only_inactive)
+    return PlayersData.strip()
 
 
-def show_rank_stats():
+def show_rank_stats(wn, idp):
     Players.clear()
-    wn = str(input("Enter word number to analize\n"))
-    show_active_tribe(wn)
-    idp = str(input("Enter tribe id\n"))
-    rank_url = 'https://pl.twstats.com/pl'+wn+'/index.php?page=rankings&mode=playersod&tribe='+idp
+    rank_url = 'https://pl.twstats.com/pl' + wn + '/index.php?page=rankings&mode=playersod&tribe=' + idp
     rank_page = get(rank_url)
 
     rank_bs = BeautifulSoup(rank_page.content, 'html.parser')
     rank_response = rank_bs.find('table', class_='widget')
+    PlayersData = ''
+    k = 0
 
     for tr in rank_response.find_all('tr'):
         td = tr.find_all('td')
@@ -91,23 +98,24 @@ def show_rank_stats():
                     data.append(tt.get_text())
                     if ids == len(td) - 1:
                         pl.set_ranking_data(data)
-    print('')
+                        PlayersData += pl.get_player_data()
+                        k += 1
+    return PlayersData
 
 
 def try_get_text(text):
     try:
-        txt = text.get_text()
+        text.get_text()
         return True
     except AttributeError:
         return False
 
 
-def find_enemy_conquerors():
-    temp_count = int(input("Enter conquerors count:"))
-    conquerors_count = max(min(temp_count, 400), 0)
+def find_enemy_conquerors(world_number, conquerors_count):
+    conquerors_count = max(min(int(conquerors_count), 400), 0)
     temp_count = 0
     page_number = 0
-    conquerors_url = 'https://pl.twstats.com/pl157/index.php?page=ennoblements&live=live'
+    conquerors_url = 'https://pl.twstats.com/pl' + world_number + '/index.php?page=ennoblements&live=live'
     page = get(conquerors_url)
 
     response = BeautifulSoup(page.content, 'html.parser')
@@ -115,11 +123,13 @@ def find_enemy_conquerors():
 
     villages = []
     break_condition = False
+    text_data = ''
     while not break_condition:
         if page_number == 0:
             temporary_tr = conquerors_response.find_all('tr')
         else:
-            next_conquerors_url = 'https://pl.twstats.com/pl157/index.php?page=ennoblements&pn='+str(page_number)+'&k=-1&maxpoints=0&minpoints=0&filtertribe=0'
+            next_conquerors_url = 'https://pl.twstats.com/pl' + world_number + '/index.php?page=ennoblements&pn=' + str(
+                page_number) + '&k=-1&maxpoints=0&minpoints=0&filtertribe=0'
             next_page = get(next_conquerors_url)
             next_response = BeautifulSoup(next_page.content, 'html.parser')
             next_conc_response = next_response.find('table', class_='widget')
@@ -138,53 +148,42 @@ def find_enemy_conquerors():
                     v = Village(name)
                     villages.append(v)
                     v.cords = coord
-                    print("Village Name: " + v.name)
-                    print("Village Cords: " + coord)
                 elif idx == 1:
                     points = td[idx].get_text().replace(',', '')
                     v.points = points
-                    print("Points: " + v.points)
                 elif idx == 2:
                     length = len(td[idx].find_all('a'))
                     if length == 0:
                         name = td[idx].get_text()
                         v.ai = True
                         v.previous_owner = name
-                        print("AI: " + name)
                     else:
                         if length == 1:
                             name = td[idx].find('a').get_text()
                             v.previous_owner = name
-                            print("Player: " + name)
                         else:
                             name = td[idx].find('a').get_text()
                             tribe = td[idx].find('a', class_='tribelink').get_text()
                             v.previous_owner = name
                             v.previous_owner_tribe = tribe
-                            print("Player: " + name)
-                            print("Tribe: " + tribe)
                 elif idx == 3:
                     length = len(td[idx].find_all('a'))
-                    if length == 1:
+                    if length == 0:
+                        return "HTML error\nWorld is probably closed"
+                    elif length == 1:
                         name = td[idx].find('a').get_text()
                         v.owner = name
-                        print("Player: " + name)
                     else:
                         name = td[idx].find('a').get_text()
                         tribe = td[idx].find('a', class_='tribelink').get_text()
                         v.owner = name
                         v.owner_tribe = tribe
-                        print("Player: " + name)
-                        print("Tribe " + tribe)
                 else:
                     date = td[4].get_text()
                     v.conqueror_time = date
-                    print("Conqueror date: " + date + '\n')
+                    text_data += v.get_data()
             if temp_count == conquerors_count:
-                break_condition = True
-                break
+                return text_data.strip()
             if i != len(temporary_tr):
                 temp_count += 1
-                print('Conquerors count:' + str(temp_count))
         page_number += 1
-        print('Page number:'+str(page_number))
