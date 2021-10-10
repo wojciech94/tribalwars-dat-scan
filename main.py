@@ -102,11 +102,41 @@ def conquerors_panel():
     clear(menu_frame)
     menu_frame.pack_forget()
     main_frame.pack()
-    tk.Text(main_frame, height=3).grid(row=0, column=0)
-    tk.Entry(main_frame, text='World number').grid(row=1, column=0)
-    tk.Entry(main_frame, text='Conquerors count').grid(row=2, column=0)
-    tk.Button(main_frame, text='Show conquerors').grid(row=3, column=0)
-    tk.Button(main_frame, text='Back', command=main_window).grid(row=4, column=0)
+    main_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+    fon = ("TIMES", 16)
+    fonb = ("TIMES", 16, "bold")
+    tx = scrolledtext.ScrolledText(main_frame, width=90, height=11, wrap=tk.WORD, bg="#FFF2E5")
+    tx.grid(row=4, columnspan=4, padx=5, pady=5)
+    tk.Label(main_frame, text='Enter world number', bg='#FFDAB3', font=fonb) \
+        .grid(row=0, column=0, columnspan=2, padx=5, pady=5)
+    tk.Label(main_frame, text='Enter conquerors count', bg='#FFDAB3', font=fonb) \
+        .grid(row=1, column=0, columnspan=2, padx=5, pady=5)
+    e1 = tk.Entry(main_frame, font=fon)
+    e1.grid(row=0, column=2, columnspan=2, padx=5, pady=5)
+    e2 = tk.Entry(main_frame, font=fon)
+    e2.grid(row=1, column=2, columnspan=2, padx=5, pady=5)
+    tk.Button(main_frame, text='Show last conquerors', font=fon, bg='#FFDAB3',
+              command=lambda: set_conquerors_data(e1.get(), e2.get(), tx)).grid(row=3, column=1, columnspan=2, padx=5,
+                                                                                pady=5)
+    tk.Button(main_frame, text='Back', font=fon, bg='#FFDAB3',
+              command=main_window).grid(row=5, column=1, columnspan=2, padx=5, pady=5)
+
+
+def set_conquerors_data(world_number, count, stxt):
+    stxt.tag_configure('center', justify='center')
+    if world_number.isnumeric() and len(world_number) > 0:
+        if count.isnumeric() and int(count) > 0:
+            txt = tribe_data.find_enemy_conquerors(world_number, count)
+        else:
+            txt = "Conquerors count must be more than 0"
+    else:
+        txt = "Cannot find specific World. " \
+              "Make sure you enter\n" \
+              "correct number (1-165). " \
+              "World should be numeric value"
+    stxt.delete('1.0', tk.END)
+    stxt.insert('1.0', txt)
+    stxt.tag_add('center', '1.0', tk.END)
 
 
 def main_window():

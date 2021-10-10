@@ -73,7 +73,6 @@ def show_inactive_members(world_number, tribe_id, show_inact):
     return PlayersData.strip()
 
 
-
 def show_rank_stats(wn, idp):
     Players.clear()
     rank_url = 'https://pl.twstats.com/pl' + wn + '/index.php?page=rankings&mode=playersod&tribe=' + idp
@@ -106,18 +105,17 @@ def show_rank_stats(wn, idp):
 
 def try_get_text(text):
     try:
-        txt = text.get_text()
+        text.get_text()
         return True
     except AttributeError:
         return False
 
 
-def find_enemy_conquerors():
-    temp_count = int(input("Enter conquerors count:"))
-    conquerors_count = max(min(temp_count, 400), 0)
+def find_enemy_conquerors(world_number, conquerors_count):
+    conquerors_count = max(min(int(conquerors_count), 400), 0)
     temp_count = 0
     page_number = 0
-    conquerors_url = 'https://pl.twstats.com/pl157/index.php?page=ennoblements&live=live'
+    conquerors_url = 'https://pl.twstats.com/pl' + world_number + '/index.php?page=ennoblements&live=live'
     page = get(conquerors_url)
 
     response = BeautifulSoup(page.content, 'html.parser')
@@ -125,11 +123,12 @@ def find_enemy_conquerors():
 
     villages = []
     break_condition = False
+    text_data = ''
     while not break_condition:
         if page_number == 0:
             temporary_tr = conquerors_response.find_all('tr')
         else:
-            next_conquerors_url = 'https://pl.twstats.com/pl157/index.php?page=ennoblements&pn=' + str(
+            next_conquerors_url = 'https://pl.twstats.com/pl' + world_number + '/index.php?page=ennoblements&pn=' + str(
                 page_number) + '&k=-1&maxpoints=0&minpoints=0&filtertribe=0'
             next_page = get(next_conquerors_url)
             next_response = BeautifulSoup(next_page.content, 'html.parser')
@@ -150,7 +149,7 @@ def find_enemy_conquerors():
                     villages.append(v)
                     v.cords = coord
                     print("Village Name: " + v.name)
-                    print("Village Cords: " + coord)
+                    print("Village Cords: " + v.cords)
                 elif idx == 1:
                     points = td[idx].get_text().replace(',', '')
                     v.points = points
@@ -176,7 +175,9 @@ def find_enemy_conquerors():
                             print("Tribe: " + tribe)
                 elif idx == 3:
                     length = len(td[idx].find_all('a'))
-                    if length == 1:
+                    if length == 0:
+                        return "HTML error"
+                    elif length == 1:
                         name = td[idx].find('a').get_text()
                         v.owner = name
                         print("Player: " + name)
@@ -191,9 +192,9 @@ def find_enemy_conquerors():
                     date = td[4].get_text()
                     v.conqueror_time = date
                     print("Conqueror date: " + date + '\n')
+                    text_data += v.get_data()
             if temp_count == conquerors_count:
-                break_condition = True
-                break
+                return text_data.strip()
             if i != len(temporary_tr):
                 temp_count += 1
                 print('Conquerors count:' + str(temp_count))
