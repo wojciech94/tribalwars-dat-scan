@@ -148,54 +148,42 @@ def find_enemy_conquerors(world_number, conquerors_count):
                     v = Village(name)
                     villages.append(v)
                     v.cords = coord
-                    print("Village Name: " + v.name)
-                    print("Village Cords: " + v.cords)
                 elif idx == 1:
                     points = td[idx].get_text().replace(',', '')
                     v.points = points
-                    print("Points: " + v.points)
                 elif idx == 2:
                     length = len(td[idx].find_all('a'))
                     if length == 0:
                         name = td[idx].get_text()
                         v.ai = True
                         v.previous_owner = name
-                        print("AI: " + name)
                     else:
                         if length == 1:
                             name = td[idx].find('a').get_text()
                             v.previous_owner = name
-                            print("Player: " + name)
                         else:
                             name = td[idx].find('a').get_text()
                             tribe = td[idx].find('a', class_='tribelink').get_text()
                             v.previous_owner = name
                             v.previous_owner_tribe = tribe
-                            print("Player: " + name)
-                            print("Tribe: " + tribe)
                 elif idx == 3:
                     length = len(td[idx].find_all('a'))
                     if length == 0:
-                        return "HTML error"
+                        return "HTML error\nWorld is probably closed"
                     elif length == 1:
                         name = td[idx].find('a').get_text()
                         v.owner = name
-                        print("Player: " + name)
                     else:
                         name = td[idx].find('a').get_text()
                         tribe = td[idx].find('a', class_='tribelink').get_text()
                         v.owner = name
                         v.owner_tribe = tribe
-                        print("Player: " + name)
-                        print("Tribe " + tribe)
                 else:
                     date = td[4].get_text()
                     v.conqueror_time = date
-                    print("Conqueror date: " + date + '\n')
                     text_data += v.get_data()
             if temp_count == conquerors_count:
                 return text_data.strip()
             if i != len(temporary_tr):
                 temp_count += 1
-                print('Conquerors count:' + str(temp_count))
         page_number += 1
