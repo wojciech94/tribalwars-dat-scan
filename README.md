@@ -1,4 +1,4 @@
-# tribalwars-dat-scan
+# tribalwars-data-scan
 <h1>Main purpose</h1>
   This project allows to extract utility data from a browser game www.plemiona.pl
   <h2>Technology</h2>
